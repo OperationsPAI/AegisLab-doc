@@ -1,9 +1,13 @@
 ---
 title: Deployment
-date: 2025-10-17
 weight: 3
+type: docs
+sidebar:
+  open: true
 ---
 
-放全部的部署细节文档
-
-包括 微服务、chaosmesh、rcabench 等各类部署
+{{< cards cols="1" >}}
+{{< card link="./chaos-mesh" title="Chaos Mesh" icon="document">}}
+{{< card link="./pedestals" title="Pedestals" icon="document">}}
+{{< card link="./rcabench" title="RCABench" icon="document">}}
+{{< /cards >}}

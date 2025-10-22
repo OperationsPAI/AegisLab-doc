@@ -34,103 +34,15 @@ This document describes how to start RCABench quickly·
 
 ### Step 1: Install Chaos Mesh
 
-> [!TIP]
-> 📖 **Original Tutorial**: This step is based on the [Chaos Mesh Installation](https://chaos-mesh.org/docs/production-installation-using-helm).
+{{< cards cols="1" >}}
+{{< card link="../deployment/chaos-mesh" title="Install Chaos Mesh" icon="document" >}}
+{{< /cards >}}
 
-```bash
-# Add the Chaos Mesh repository to the Helm repository
-helm repo add chaos-mesh https://charts.chaos-mesh.org
+### Step 2: Deploy Train Ticket
 
-# To see charts that can be installed
-helm search repo chaos-mesh
-
-# Install Chaos Mesh under the chaos-mesh namespace
-kubectl create ns chaos-mesh
-
-helm install chaos-mesh chaos-mesh/chaos-mesh -n=chaos-mesh
-    --set chaosDaemon.runtime=containerd \
-    --set chaosDaemon.socketPath=/run/containerd/containerd.sock \
-    --version 2.7.2
-```
-
-#### Access Chaos Mesh Dashboard
-
-```bash
-kubectl get svc -n chaos-mesh
-NAME                            TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                                 AGE
-chaos-daemon                    ClusterIP   None            <none>        31767/TCP,31766/TCP                     30m
-chaos-dashboard                 NodePort    10.97.177.177   <none>        2333:31632/TCP,2334:32683/TCP           30m
-chaos-mesh-controller-manager   ClusterIP   10.105.196.18   <none>        443/TCP,10081/TCP,10082/TCP,10080/TCP   30m
-chaos-mesh-dns-server           ClusterIP   10.96.127.183   <none>        53/UDP,53/TCP,9153/TCP,9288/TCP         30m
-```
-
-Visit `http://<your-ip>:<your-node-port>` in your browser to access the Chaos Mesh dashboard.
-
-#### Generate Dashboard Token
-
-1. Save below content as `rbac.yaml`:
-
-```yaml
-kind: ServiceAccount
-apiVersion: v1
-metadata:
-  namespace: default
-  name: account-cluster
-
----
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: role-cluster
-rules:
-  - apiGroups: [""]
-    resources: ["pods", "namespaces"]
-    verbs: ["get", "watch", "list"]
-  - apiGroups: ["chaos-mesh.org"]
-    resources: ["*"]
-    verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: bind-cluster
-subjects:
-  - kind: ServiceAccount
-    name: account-cluster
-    namespace: default
-roleRef:
-  kind: ClusterRole
-  name: role-cluster
-  apiGroup: rbac.authorization.k8s.io
-```
-
-2. Then run the following command to create the service account and role binding:
-
-```bash
-kubectl apply -f rbac.yaml
-```
-
-3.  Generate a service account token:
-
-```bash
-kubectl create token account-cluster -n default
-```
-
-Copy the generated token and use it to log in to the dashboard. The name of the front end can be written as you like.
-
-### Step 2: Deploy Benchmark Application
-
-Deploy a pedestal microservices application `train-ticket` to be used for fault injection and root cause analysis.
-
-```bash
-# Create a namespace for the benchmark application
-kubectl create namespace ts0
-
-# Deploy the train-ticket application
-# ts is the prefix for the namespace and 1 is the number of pedestal instances
-make install-releases PEDESTAL_KEY=ts PEDESTAL_COUNT=1
-```
+{{< cards cols="1" >}}
+{{< card link="../deployment/train-ticket" title="Deploy Train Ticket" icon="document" >}}
+{{< /cards >}}
 
 ### Step 3: Local Development Setup
 
