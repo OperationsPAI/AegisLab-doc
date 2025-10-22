@@ -27,7 +27,7 @@ menu:
         type: search
     - name: GitHub
       weight: 5
-      url: "https://github.com/OperationsPAI/AegisLab"
+      url: "https://github.com/OperationsPAI/AegisLab-doc"
       params:
         icon: github
     # - name: Twitter
