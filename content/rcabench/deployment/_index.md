@@ -6,6 +6,10 @@ sidebar:
   open: true
 ---
 
+## Overview
+
+This section provides detailed guides on deploying various components of RCABench.
+
 {{< cards cols="1" >}}
 {{< card link="./chaos-mesh" title="Chaos Mesh" icon="document">}}
 {{< card link="./pedestals" title="Pedestals" icon="document">}}

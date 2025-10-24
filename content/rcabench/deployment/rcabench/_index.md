@@ -15,15 +15,14 @@ This document describes how to deploy RCABench, a fault injection framework for 
 Before you begin, ensure you have the following tools installed:
 
 1. **[Helm](https://helm.sh/docs/intro/install/)**: For managing Kubernetes applications.
-2. **[Skaffold](https://skaffold.dev/docs/install/)**: For building Docker images.
+2. **[Skaffold](https://skaffold.dev/docs/install/)**: For building RCABench Server images.
 3. **[Kubectl](https://kubernetes.io/docs/tasks/tools/)**: For interacting with your Kubernetes cluster.
-4. **Docker**: For building container images.
+4. **[Docker](https://docs.docker.com/engine/install/)**: For building all kinds of Container images in RCABench.
 5. **Go**: For building RCABench web server.
 6. **Make**: For using the provided Makefile to streamline deployment tasks.
 
-{{< callout type="important" >}}
-You also need access to a container registry (e.g., Docker Hub, a private registry) to push and pull images.
-{{< /callout >}}
+> [!Important]
+> You need access to a container registry (e.g., Docker Hub, a private registry) to push and pull images.
 
 ## Installation
 
@@ -47,7 +46,7 @@ Use the RCABench Makefile to deploy RCABench components.
 
 ```bash
 # Start all services with Docker Compose
-make local-debug
+devbox run local-debug
 
 # This will start:
 # - MySQL database
@@ -63,9 +62,8 @@ The service endpoints will be accessible at `http://localhost:8082` for the RCAB
 
 {{< tab >}}
 
-{{< callout type="important" >}}
-Ensure you have a Kubernetes cluster ready.
-{{< /callout >}}
+> [!Important]
+> Ensure you have a Kubernetes cluster ready.
 
 {{% steps %}}
 
@@ -97,11 +95,8 @@ helm install openebs openebs/openebs --namespace openebs \
 ### Deploy RCABench to Kubernetes
 
 ```bash
-# Check environment dependencies
-make check-prerequisites
-
 # Deploy with default configuration
-make run
+devbox run run
 ```
 
 {{% /steps %}}

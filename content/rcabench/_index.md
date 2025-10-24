@@ -6,7 +6,7 @@ type: docs
 
 RCABench is a comprehensive benchmarking platform designed for evaluating root cause analysis (RCA) algorithms in microservices environments. It provides automated fault injection, algorithm execution, and evaluation capabilities for distributed systems research.
 
-## 🎯 Key Features
+## Key Features
 
 - **Inject faults** into microservices using chaos engineering principles
 - **Execute RCA algorithms** on collected observability data
@@ -18,6 +18,6 @@ RCABench is a comprehensive benchmarking platform designed for evaluating root c
 
 ## Next
 
-{{< cards >}}
-{{< card url="../getting-started" title="Get Started" icon="play" subtitle="Create your own system in just 5 minutes!" >}}
+{{< cards cols="1" >}}
+{{< card link="./getting-started" title="Get Started" icon="play">}}
 {{< /cards >}}

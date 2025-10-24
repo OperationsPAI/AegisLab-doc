@@ -15,14 +15,13 @@ This document describes how to deploy the `train-ticket` pedestal microservices 
 Before you begin, ensure you have the following tools installed:
 
 1. **[Helm](https://helm.sh/docs/intro/install/)**: For managing Kubernetes applications.
-2. **Docker**: For building container images.
+2. **[Docker](https://docs.docker.com/engine/install/)**: For building container images.
 3. **JDK and Maven**: For building the Java-based project. (JDK 8 or 17 is recommended; ensure your `JAVA_HOME` is set correctly.)
    - You can check your Java version with `java -version`
    - Maven can be installed via package managers or downloaded from the [Apache Maven website](https://maven.apache.org/download.cgi).
 
-{{< callout type="important" >}}
-You also need access to a container registry (e.g., Docker Hub, a private registry) to push and pull images.
-{{< /callout >}}
+> [!Important]
+> You need access to a container registry (e.g., Docker Hub, a private registry) to push and pull images.
 
 ## Installation
 
