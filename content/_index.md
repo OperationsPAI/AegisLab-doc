@@ -74,3 +74,5 @@ layout: hextra-home
     subtitle="Syntax highlighting / Table of contents / SEO / RSS / LaTeX / Mermaid / Customizable / and more..."
   >}}
 {{< /hextra/feature-grid >}}
+
+{{< github-contributors owner="OperationsPAI" repo="AegisLab" limit="30" >}}

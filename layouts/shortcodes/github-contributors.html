@@ -1,0 +1,70 @@
+{{- $repo := .Get "repo" -}}
+{{- $owner := .Get "owner" -}}
+{{- $limit := .Get "limit" | default 30 -}}
+
+<div class="contributors-section hx:mt-12 hx:mb-12">
+  <div class="hx:max-w-7xl hx:mx-auto hx:px-4">
+    <h2 class="hx:text-3xl hx:font-bold hx:mb-8 hx:text-center">Contributors</h2>
+    <div class="contributors-grid hx:flex hx:flex-wrap hx:justify-center hx:gap-4" id="contributors-container">
+      <p class="hx:text-center hx:text-gray-500 hx:w-full">Loading contributors...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const owner = '{{ $owner }}';
+  const repo = '{{ $repo }}';
+  const limit = {{ $limit }};
+  
+  async function fetchContributors() {
+    try {
+      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contributors?per_page=${limit}`);
+      if (!response.ok) throw new Error('Failed to fetch contributors');
+      
+      const contributors = await response.json();
+      const container = document.getElementById('contributors-container');
+      
+      if (contributors.length === 0) {
+        container.innerHTML = '<p class="hx:text-center hx:text-gray-500 hx:w-full">No contributors found.</p>';
+        return;
+      }
+      
+      container.innerHTML = contributors.map(contributor => `
+        <a href="${contributor.html_url}" 
+           target="_blank" 
+           rel="noopener noreferrer"
+           class="contributor-card hx:flex hx:flex-col hx:items-center hx:p-3 hx:rounded-lg hx:transition-all hx:duration-200 hover:hx:bg-gray-100 dark:hover:hx:bg-gray-800 hx:group"
+           title="${contributor.login} - ${contributor.contributions} contributions">
+          <img src="${contributor.avatar_url}" 
+               alt="${contributor.login}" 
+               class="hx:w-16 hx:h-16 hx:rounded-full hx:mb-2 hx:border-2 hx:border-gray-200 dark:hx:border-gray-700 group-hover:hx:border-primary-500 hx:transition-colors"
+               loading="lazy">
+          <span class="hx:text-sm hx:font-medium hx:text-gray-700 dark:hx:text-gray-300">${contributor.login}</span>
+          <span class="hx:text-xs hx:text-gray-500 dark:hx:text-gray-400">${contributor.contributions} commits</span>
+        </a>
+      `).join('');
+    } catch (error) {
+      console.error('Error fetching contributors:', error);
+      document.getElementById('contributors-container').innerHTML = 
+        '<p class="hx:text-center hx:text-gray-500 hx:w-full">Failed to load contributors.</p>';
+    }
+  }
+  
+  // Fetch contributors when page loads
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fetchContributors);
+  } else {
+    fetchContributors();
+  }
+})();
+</script>
+
+<style>
+.contributors-section {
+  width: 100%;
+}
+.contributors-grid {
+  max-width: 100%;
+}
+</style>
