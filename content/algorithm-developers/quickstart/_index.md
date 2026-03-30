@@ -3,7 +3,13 @@ title: Quickstart
 weight: 1
 ---
 
-Get started with RCA algorithm development in under 15 minutes.
+This quickstart demonstrates how to run a simple RCA algorithm using rcabench-platform in under 15 minutes.  
+
+You will:  
+
+- install the platform
+- verify the environment
+- run a baseline algorithm on a datapack
 
 ## Prerequisites
 
@@ -89,8 +95,13 @@ git clone https://github.com/OperationsPAI/rcabench-platform.git
 cd rcabench-platform
 uv sync --all-extras
 ```
+`uv sync --all-extras` installs all dependencies and automatically creates a virtual environment in .venv.
+
+If you use an IDE, configure the interpreter to: `.venv/bin/python`.
 
 This installs the platform with all dependencies including algorithm development tools.
+
+Example commands below assume you are running them inside the ```rcabench-platform``` project root.
 
 ## Step 2: Verify Installation
 
@@ -132,6 +143,11 @@ Verify you have access to datasets:
 ...
 ```
 
+The number in parentheses indicates how many datasets were discovered in the data directory.
+
+Running the command: `./main.py eval show-datasets` to lists all datasets found in this directory.  
+You can also inspect them manually: 'ls data/rcabench-platform-v2/data/'  
+
 If you see "Available datasets (0)", your data directory is not properly configured. See troubleshooting below.
 
 ## Step 3: Download Sample Dataset
@@ -141,6 +157,7 @@ For this quickstart, we'll use a small sample dataset. Create a data directory a
 ```bash
 mkdir -p data/sample
 # Sample dataset will be provided - for now, use existing datasets
+# You may also refer to the Dataset Creator to generate test datasets.
 # If you have JuiceFS access:
 # sudo juicefs mount ${JUICEFS_REDIS_URL} /mnt/jfs -d
 # Default: redis://10.10.10.119:6379/1 (see .env.example)
@@ -155,10 +172,20 @@ Run the built-in `random` algorithm on a sample dataset:
 ./main.py eval single random rcabench_filtered ts0-ts-auth-service-stress-jv8m9r
 ```
 
+Datapack IDs represent specific fault injection scenarios, for example:  
+`ts0-ts-auth-service-stress-jv8m9r` means a scenario where ts-auth-service experiences stress.
+
+You can list available datapacks using:  
+'ls data/rcabench-platform-v2/data/rcabench_filtered/'
+
 This command:
 - Evaluates the `random` algorithm (randomly ranks all services)
 - Uses the `rcabench_filtered` dataset
 - Processes the specified datapack (fault injection scenario)
+
+**Note**: The random algorithm currently only supports datasets whose names start with:
+- `rcabench`
+- `rcaeval`
 
 **Expected output:**
 
@@ -205,7 +232,7 @@ AC@5: 0.0
 - **Avg@k**: Average number of correct answers in top-k predictions
 - **AC@k (Top-k Accuracy)**: Percentage of cases where at least one correct answer appears in top-k
 
-The random algorithm performs poorly (as expected), but demonstrates the evaluation framework works correctly.
+The random algorithm serves as a baseline and is expected to perform poorly, but demonstrates the evaluation framework works correctly.
 
 ## Step 5: Explore the Algorithm Code
 
