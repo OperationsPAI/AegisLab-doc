@@ -34,9 +34,9 @@ from rcabench_platform.v2.algorithms import Algorithm, AlgorithmArgs, AlgorithmA
 import polars as pl
 
 class SimpleRCA(Algorithm):
-    def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+    def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
         # Read trace data
-        traces = pl.read_parquet(args.trace_path)
+        traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
 
         # Analyze error spans
         error_spans = traces.filter(pl.col("status_code") == "ERROR")
@@ -50,9 +50,10 @@ class SimpleRCA(Algorithm):
         )
 
         # Return ranked services
-        return AlgorithmAnswer(
-            ranked_services=service_errors["service_name"].to_list()
-        )
+        return [
+            AlgorithmAnswer(level="service", name=service_name, rank=rank)
+            for rank, service_name in enumerate(service_errors["service_name"].to_list(), start=1)
+        ]
 ```
 
 ## Key Concepts
@@ -76,7 +77,7 @@ Use Polars for efficient data processing:
 import polars as pl
 
 # Lazy evaluation for large datasets
-traces = pl.scan_parquet(args.trace_path)
+traces = pl.scan_parquet(args.input_folder / "abnormal_traces.parquet")
 
 # Filter and aggregate
 result = (
@@ -93,19 +94,19 @@ result = (
 Always handle missing or malformed data:
 
 ```python
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
     try:
-        traces = pl.read_parquet(args.trace_path)
+        traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
 
         if traces.is_empty():
-            return AlgorithmAnswer(ranked_services=[])
+            return []
 
         # Your algorithm logic
 
     except Exception as e:
         # Log error and return empty result
         print(f"Error processing traces: {e}")
-        return AlgorithmAnswer(ranked_services=[])
+        return []
 ```
 
 ## Next Steps

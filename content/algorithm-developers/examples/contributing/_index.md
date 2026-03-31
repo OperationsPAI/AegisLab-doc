@@ -183,19 +183,19 @@ Create a pull request on GitHub with:
 ### Error Handling
 
 ```python
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
     try:
-        traces = pl.read_parquet(args.trace_path)
+        traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
     except Exception as e:
         print(f"Error loading traces: {e}")
-        return AlgorithmAnswer(ranked_services=[])
+        return []
 
     # Algorithm logic with proper error handling
     try:
         result = self.analyze(traces)
     except Exception as e:
         print(f"Error during analysis: {e}")
-        return AlgorithmAnswer(ranked_services=[])
+        return []
 
     return result
 ```
@@ -220,13 +220,14 @@ def test_basic_functionality():
     algo = MyRCA()
     # Test with minimal data
     result = algo(test_args)
-    assert len(result.ranked_services) > 0
+    assert len(result) > 0
+    assert all(isinstance(ans, AlgorithmAnswer) for ans in result)
 
 def test_error_handling():
     algo = MyRCA()
     # Test with invalid data
     result = algo(invalid_args)
-    assert result.ranked_services == []
+    assert result == []
 ```
 
 ## Review Process
