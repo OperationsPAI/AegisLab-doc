@@ -10,7 +10,7 @@ Complete reference for implementing RCA algorithms using the standardized interf
 All RCA algorithms must inherit from the `Algorithm` base class:
 
 ```python
-from rcabench_platform.v2.algorithms import Algorithm, AlgorithmArgs, AlgorithmAnswer
+from rcabench_platform.v3.sdk.algorithms.spec import Algorithm, AlgorithmArgs, AlgorithmAnswer
 
 class MyRCAAlgorithm(Algorithm):
     def needs_cpu_count(self) -> int | None:
@@ -119,7 +119,7 @@ def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
 Here's a complete minimal algorithm:
 
 ```python
-from rcabench_platform.v2.algorithms import Algorithm, AlgorithmArgs, AlgorithmAnswer
+from rcabench_platform.v3.sdk.algorithms.spec import Algorithm, AlgorithmArgs, AlgorithmAnswer
 import polars as pl
 import json
 from datetime import datetime
@@ -181,10 +181,10 @@ To make your algorithm available via the CLI, register it in the global registry
 
 ### Step 1: Create Your Algorithm File
 
-Create your algorithm in `rcabench_platform/v2/algorithms/`:
+Create your algorithm in `rcabench_platform/v3/sdk/algorithms/`:
 
 ```python
-# rcabench_platform/v2/algorithms/my_algorithm.py
+# rcabench_platform/v3/sdk/algorithms/my_algorithm.py
 from .spec import Algorithm, AlgorithmArgs, AlgorithmAnswer
 import polars as pl
 
@@ -201,7 +201,7 @@ class MyRCAAlgorithm(Algorithm):
 
 ### Step 2: Register in main.py
 
-Add your algorithm to the registration function in `rcabench_platform/v2/cli/main.py`:
+Add your algorithm to the registration function in `rcabench_platform/v3/cli/main.py`:
 
 ```python
 def register_builtin_algorithms():
@@ -381,7 +381,7 @@ Test locally before submission:
 ```python
 # test_my_algorithm.py
 from pathlib import Path
-from rcabench_platform.v2.algorithms import AlgorithmArgs
+from rcabench_platform.v3.sdk.algorithms.spec import AlgorithmArgs
 from my_algorithm import MyRCAAlgorithm
 
 def test_algorithm():

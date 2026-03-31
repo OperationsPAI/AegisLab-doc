@@ -239,7 +239,7 @@ The random algorithm serves as a baseline and is expected to perform poorly, but
 Look at the `random` implementation to understand the algorithm interface:
 
 ```bash
-cat src/rcabench_platform/v2/algorithms/random_.py
+cat src/rcabench_platform/v3/sdk/algorithms/random_.py
 ```
 
 Key components:

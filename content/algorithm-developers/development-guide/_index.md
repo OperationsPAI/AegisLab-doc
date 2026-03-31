@@ -30,7 +30,7 @@ Developing an RCA algorithm involves:
 Here's a minimal RCA algorithm:
 
 ```python
-from rcabench_platform.v2.algorithms import Algorithm, AlgorithmArgs, AlgorithmAnswer
+from rcabench_platform.v3.sdk.algorithms.spec import Algorithm, AlgorithmArgs, AlgorithmAnswer
 import polars as pl
 
 class SimpleRCA(Algorithm):

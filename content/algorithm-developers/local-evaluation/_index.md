@@ -243,7 +243,7 @@ Create a minimal test case:
 ```python
 # test_minimal.py
 from pathlib import Path
-from rcabench_platform.v2.algorithms import AlgorithmArgs
+from rcabench_platform.v3.sdk.algorithms.spec import AlgorithmArgs
 from my_algorithm import MyRCAAlgorithm
 
 # Create minimal test data
@@ -285,7 +285,7 @@ Profile your algorithm to identify bottlenecks:
 import cProfile
 import pstats
 from pathlib import Path
-from rcabench_platform.v2.algorithms import AlgorithmArgs
+from rcabench_platform.v3.sdk.algorithms.spec import AlgorithmArgs
 from my_algorithm import MyRCAAlgorithm
 
 args = AlgorithmArgs(
@@ -319,7 +319,7 @@ Monitor memory usage for large datasets:
 # memory_test.py
 import tracemalloc
 from pathlib import Path
-from rcabench_platform.v2.algorithms import AlgorithmArgs
+from rcabench_platform.v3.sdk.algorithms.spec import AlgorithmArgs
 from my_algorithm import MyRCAAlgorithm
 
 # Start memory tracking
@@ -364,7 +364,7 @@ ls data/trainticket-pandora-v1/
 Error: Algorithm 'my-rca' not found in registry
 ```
 
-**Solution**: Register your algorithm in `v2/cli/main.py`:
+**Solution**: Register your algorithm in `v3/cli/main.py`:
 
 ```python
 def register_builtin_algorithms():

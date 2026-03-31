@@ -24,7 +24,7 @@ Traces → Graph Construction → Feature Extraction → GNN Model → Ranked Se
 ### Algorithm Structure
 
 ```python
-from rcabench_platform.v2.algorithms import Algorithm, AlgorithmArgs, AlgorithmAnswer
+from rcabench_platform.v3.sdk.algorithms.spec import Algorithm, AlgorithmArgs, AlgorithmAnswer
 import polars as pl
 import torch
 import torch.nn as nn

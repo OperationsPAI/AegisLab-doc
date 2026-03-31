@@ -105,7 +105,7 @@ Error: Algorithm 'my-rca' not found in registry
 
 **Cause**: Algorithm not registered in the platform.
 
-**Solution**: Register in `v2/cli/main.py`:
+**Solution**: Register in `v3/cli/main.py`:
 ```python
 def register_builtin_algorithms():
     registry = AlgorithmRegistry.get_instance()
@@ -122,7 +122,7 @@ Warning: Algorithm returned empty ranked_services
 
 **Solution**: Add debug logging:
 ```python
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
     traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
     print(f"Loaded {len(traces)} traces")
 
@@ -132,6 +132,7 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
     if len(filtered) == 0:
         print("WARNING: No error spans found!")
         # Return default ranking or handle gracefully
+        return []
 ```
 
 ### Invalid return type

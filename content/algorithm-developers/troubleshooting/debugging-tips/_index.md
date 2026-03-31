@@ -75,7 +75,7 @@ print(traces.select(["service_name", "status_code"]).unique())
 ```python
 import pdb
 
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
     traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
 
     # Set breakpoint
@@ -100,17 +100,15 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
 
 ```python
 # Create test script: test_algorithm.py
-from rcabench_platform.v2.algorithms import AlgorithmArgs
+from rcabench_platform.v3.sdk.algorithms.spec import AlgorithmArgs
 from my_algorithm import MyRCA
 import polars as pl
 
 args = AlgorithmArgs(
-    trace_path="data/trainticket-pandora-v1/0/trace.parquet",
-    ground_truth_path="data/trainticket-pandora-v1/0/ground_truth.parquet",
-    output_path="output/",
-    dataset_name="trainticket-pandora-v1",
-    datapack_id="0",
-    benchmark="trainticket"
+    dataset="trainticket-pandora-v1",
+    datapack="ts0-ts-auth-service-stress-jv8m9r",
+    input_folder=Path("data/rcabench-platform-v2/data/trainticket-pandora-v1/ts0-ts-auth-service-stress-jv8m9r"),
+    output_folder=Path("output")
 )
 
 # Load data
@@ -132,7 +130,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
     logging.info(f"Processing {args.dataset}/{args.datapack}")
 
     traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
@@ -156,7 +154,7 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
 **Debug steps**:
 
 ```python
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
     traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
     print(f"Total traces: {len(traces)}")
 
@@ -175,6 +173,7 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
     print(services)
 
     # Continue debugging...
+    return []
 ```
 
 ### Incorrect Rankings
@@ -184,14 +183,15 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
 **Debug steps**:
 
 ```python
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
     # Load ground truth
-    gt = pl.read_parquet(args.input_folder / "injection.json")
-    print(f"Ground truth: {gt['root_cause_service'][0]}")
+    with open(args.input_folder / "injection.json") as f:
+        injection = json.load(f)
+    print(f"Ground truth: {injection['target_service']}")
 
     # Check if ground truth service appears in traces
     traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
-    gt_service = gt['root_cause_service'][0]
+    gt_service = injection['target_service']
 
     gt_spans = traces.filter(pl.col("service_name") == gt_service)
     print(f"Ground truth service spans: {len(gt_spans)}")
@@ -199,6 +199,7 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
 
     # Compare with your ranking logic
     # ...
+    return []
 ```
 
 ### Performance Issues
@@ -210,7 +211,7 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
 ```python
 import time
 
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
     start = time.time()
 
     # Time each operation
@@ -243,7 +244,7 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
 ```python
 import tracemalloc
 
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
     tracemalloc.start()
 
     # Check memory at each step
@@ -337,7 +338,7 @@ def visualize_traces(traces):
 import pytest
 import polars as pl
 from my_rca import MyRCA
-from rcabench_platform.v2.algorithms import AlgorithmArgs
+from rcabench_platform.v3.sdk.algorithms.spec import AlgorithmArgs
 
 def test_basic_functionality():
     """Test algorithm with minimal data."""

@@ -17,7 +17,7 @@ The `simplerca` algorithm uses simple heuristics to identify root causes:
 ### Algorithm Class
 
 ```python
-from rcabench_platform.v2.algorithms import Algorithm, AlgorithmArgs, AlgorithmAnswer
+from rcabench_platform.v3.sdk.algorithms.spec import Algorithm, AlgorithmArgs, AlgorithmAnswer
 import polars as pl
 
 class SimpleRCA(Algorithm):
