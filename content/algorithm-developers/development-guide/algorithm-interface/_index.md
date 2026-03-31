@@ -32,7 +32,8 @@ class MyRCAAlgorithm(Algorithm):
         """
         # Your algorithm implementation
         pass
-```
+```  
+**Note**: Algorithms should not rely on persistent in-memory state across datapacks. Each evaluation run should treat the input datapack independently.
 
 ## AlgorithmArgs
 
@@ -47,7 +48,9 @@ class AlgorithmArgs:
     datapack: str          # Datapack identifier (e.g., "0", "1", "2")
     input_folder: Path     # Path to folder containing parquet files
     output_folder: Path    # Path to folder for writing results
-```
+```  
+The `input_folder` corresponds to a single datapack directory containing telemetry parquet files.  
+The `output_folder` can be used to store intermediate results, debug outputs, or additional artifacts produced by the algorithm. Files written here will be preserved alongside the evaluation outputs.
 
 ### Input Folder Structure
 
@@ -55,8 +58,8 @@ The `input_folder` contains standardized parquet files:
 
 ```
 input_folder/
-├── abnormal_traces.parquet           # Distributed trace data during fault
-├── normal_traces.parquet             # Baseline trace data before fault
+├── abnormal_traces.parquet           # Distributed trace data during fault (required)
+├── normal_traces.parquet             # Baseline trace data before fault (required)
 ├── abnormal_logs.parquet             # Application logs during fault (optional)
 ├── normal_logs.parquet               # Baseline logs before fault (optional)
 ├── abnormal_metrics.parquet          # Time-series metrics during fault (optional)
@@ -86,6 +89,7 @@ def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
     if metrics_path.exists():
         metrics = pl.read_parquet(metrics_path)
 ```
+The `injection.json` file contains ground truth information about the injected fault. It is provided for reference and evaluation purposes. RCA algorithms should not use this file when generating predictions.
 
 ## AlgorithmAnswer
 
@@ -96,10 +100,10 @@ Output structure your algorithm must return:
 class AlgorithmAnswer:
     level: str    # Level of the root cause (e.g., "service", "pod", "container")
     name: str     # Name of the suspected root cause
-    rank: int     # Rank of this answer (1 = most likely root cause)
-```
-
-Your algorithm returns a **list** of `AlgorithmAnswer` objects, ranked by likelihood.
+    rank: int     # Rank of this answer (1，2，3..., 1 = most likely root cause)
+```  
+Your algorithm returns a **list** of `AlgorithmAnswer` objects, ranked by likelihood.  
+For service-level RCA, this typically means returning all services sorted by suspected root cause likelihood.
 
 ### Example Usage
 
@@ -120,6 +124,7 @@ Here's a complete minimal algorithm:
 
 ```python
 from rcabench_platform.v2.algorithms import Algorithm, AlgorithmArgs, AlgorithmAnswer
+#This example uses polars, but you can use other libraries like panda
 import polars as pl
 import json
 from datetime import datetime
@@ -174,6 +179,8 @@ class ErrorCountRCA(Algorithm):
             print(f"Error in algorithm: {e}")
             return []
 ```
+The `service_name` field represents the logical service that emitted the span. It is typically derived from the tracing system (e.g., the OpenTelemetry `service.name` attribute).  
+`time`, `attr.status_code` and `service_name` are possible columns in `abnormal_traces.parquet`.
 
 ## Algorithm Registration
 
@@ -225,6 +232,7 @@ Run your algorithm via CLI:
 ```bash
 ./main.py eval single my-rca rcabench_filtered <datapack-name>
 ```
+Use --clear to re-run if results already exist.
 
 ## Best Practices
 
