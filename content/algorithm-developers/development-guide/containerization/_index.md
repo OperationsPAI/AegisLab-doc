@@ -142,8 +142,8 @@ Your algorithm container needs a main.py file that registers your algorithm with
 
 ```python
 #!/usr/bin/env -S uv run -s
-from rcabench_platform.v2.cli.main import main
-from rcabench_platform.v2.algorithms.spec import global_algorithm_registry
+from rcabench_platform.v3.cli.main import main
+from rcabench_platform.v3.sdk.algorithms.spec import global_algorithm_registry
 from my_algorithm import MyAlgorithm
 
 if __name__ == "__main__":
@@ -165,8 +165,8 @@ if __name__ == "__main__":
 
 ```python
 #!/usr/bin/env -S uv run -s
-from rcabench_platform.v2.cli.main import main
-from rcabench_platform.v2.algorithms.spec import global_algorithm_registry
+from rcabench_platform.v3.cli.main import main
+from rcabench_platform.v3.sdk.algorithms.spec import global_algorithm_registry
 from baro.baro import Baro
 
 if __name__ == "__main__":
@@ -437,7 +437,7 @@ def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
 ### Log Progress for Debugging
 
 ```python
-from rcabench_platform.v2.logging import logger
+from rcabench_platform.v3.sdk.logging import logger
 
 def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
     logger.info(f"Loading traces from {args.input_folder}")

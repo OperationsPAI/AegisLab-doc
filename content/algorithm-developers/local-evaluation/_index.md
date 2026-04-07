@@ -198,16 +198,19 @@ print(df.to_string(index=False))
 Add print statements in your algorithm:
 
 ```python
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
-    print(f"Processing {args.dataset_name}/{args.datapack_id}")
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
+    print(f"Processing {args.dataset}/{args.datapack}")
 
-    traces = pl.read_parquet(args.trace_path)
+    traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
     print(f"Loaded {len(traces)} traces")
 
     # Your algorithm logic
     print(f"Found {len(error_spans)} error spans")
 
-    return AlgorithmAnswer(ranked_services=ranked)
+    return [
+        AlgorithmAnswer(level="service", name=service_name, rank=rank)
+        for rank, service_name in enumerate(ranked, start=1)
+    ]
 ```
 
 ### Inspect Input Data
@@ -239,7 +242,8 @@ Create a minimal test case:
 
 ```python
 # test_minimal.py
-from rcabench_platform.v2.algorithms import AlgorithmArgs
+from pathlib import Path
+from rcabench_platform.v3.sdk.algorithms.spec import AlgorithmArgs
 from my_algorithm import MyRCAAlgorithm
 
 # Create minimal test data
@@ -254,16 +258,17 @@ traces = pl.DataFrame({
     "end_time": [1050, 1150, 2050]
 })
 
-traces.write_parquet("test_trace.parquet")
+# Create test directory structure
+test_input = Path("test_data")
+test_input.mkdir(exist_ok=True)
+traces.write_parquet(test_input / "abnormal_traces.parquet")
 
 # Test algorithm
 args = AlgorithmArgs(
-    trace_path="test_trace.parquet",
-    ground_truth_path="test_gt.parquet",
-    output_path="output/",
-    dataset_name="test",
-    datapack_id="0",
-    benchmark="test"
+    dataset="test",
+    datapack="0",
+    input_folder=test_input,
+    output_folder=Path("output")
 )
 
 algo = MyRCAAlgorithm()
@@ -279,16 +284,15 @@ Profile your algorithm to identify bottlenecks:
 # profile_algorithm.py
 import cProfile
 import pstats
-from rcabench_platform.v2.algorithms import AlgorithmArgs
+from pathlib import Path
+from rcabench_platform.v3.sdk.algorithms.spec import AlgorithmArgs
 from my_algorithm import MyRCAAlgorithm
 
 args = AlgorithmArgs(
-    trace_path="data/trainticket-pandora-v1/0/trace.parquet",
-    ground_truth_path="data/trainticket-pandora-v1/0/ground_truth.parquet",
-    output_path="output/",
-    dataset_name="trainticket-pandora-v1",
-    datapack_id="0",
-    benchmark="trainticket"
+    dataset="trainticket-pandora-v1",
+    datapack="0",
+    input_folder=Path("data/rcabench-platform-v2/data/trainticket-pandora-v1/0"),
+    output_folder=Path("output")
 )
 
 algo = MyRCAAlgorithm()
@@ -314,19 +318,18 @@ Monitor memory usage for large datasets:
 ```python
 # memory_test.py
 import tracemalloc
-from rcabench_platform.v2.algorithms import AlgorithmArgs
+from pathlib import Path
+from rcabench_platform.v3.sdk.algorithms.spec import AlgorithmArgs
 from my_algorithm import MyRCAAlgorithm
 
 # Start memory tracking
 tracemalloc.start()
 
 args = AlgorithmArgs(
-    trace_path="data/trainticket-pandora-v1/0/trace.parquet",
-    ground_truth_path="data/trainticket-pandora-v1/0/ground_truth.parquet",
-    output_path="output/",
-    dataset_name="trainticket-pandora-v1",
-    datapack_id="0",
-    benchmark="trainticket"
+    dataset="trainticket-pandora-v1",
+    datapack="0",
+    input_folder=Path("data/rcabench-platform-v2/data/trainticket-pandora-v1/0"),
+    output_folder=Path("output")
 )
 
 algo = MyRCAAlgorithm()
@@ -361,7 +364,7 @@ ls data/trainticket-pandora-v1/
 Error: Algorithm 'my-rca' not found in registry
 ```
 
-**Solution**: Register your algorithm in `v2/cli/main.py`:
+**Solution**: Register your algorithm in `v3/cli/main.py`:
 
 ```python
 def register_builtin_algorithms():
@@ -393,7 +396,7 @@ MemoryError: Unable to allocate array
 
 ```python
 # Instead of read_parquet
-traces = pl.scan_parquet(args.trace_path)
+traces = pl.scan_parquet(args.input_folder / "abnormal_traces.parquet")
 
 # Build query
 result = traces.filter(...).group_by(...).collect()

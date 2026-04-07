@@ -40,10 +40,10 @@ Welcome to the Algorithm Developer path! This guide helps you develop and evalua
 All RCA algorithms implement a standardized interface:
 
 ```python
-from rcabench_platform.v2.algorithms import Algorithm, AlgorithmArgs, AlgorithmAnswer
+from rcabench_platform.v3.sdk.algorithms.spec import Algorithm, AlgorithmArgs, AlgorithmAnswer
 
 class MyRCAAlgorithm(Algorithm):
-    def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+    def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
         # Your algorithm logic here
         pass
 ```

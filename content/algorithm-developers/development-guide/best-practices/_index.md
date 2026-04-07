@@ -218,7 +218,7 @@ def load_traces(args: AlgorithmArgs) -> pl.LazyFrame:
 Import and use the platform's logger for consistent output:
 
 ```python
-from rcabench_platform.v2.logging import logger, timeit
+from rcabench_platform.v3.sdk.logging import logger, timeit
 
 class MyAlgorithm(Algorithm):
     @timeit()  # Auto-logs entry/exit with duration
@@ -239,7 +239,7 @@ class MyAlgorithm(Algorithm):
 Track execution time of key functions:
 
 ```python
-from rcabench_platform.v2.logging import timeit
+from rcabench_platform.v3.sdk.logging import timeit
 
 @timeit(log_level="INFO")  # Log at INFO level instead of DEBUG
 def build_dependency_graph(traces: pl.DataFrame) -> Graph:
@@ -350,7 +350,7 @@ Test the full algorithm with a sample datapack:
 # test_integration.py
 from pathlib import Path
 from my_algorithm import MyAlgorithm
-from rcabench_platform.v2.algorithms.spec import AlgorithmArgs
+from rcabench_platform.v3.sdk.algorithms.spec import AlgorithmArgs
 
 def test_algorithm_on_sample_data():
     args = AlgorithmArgs(

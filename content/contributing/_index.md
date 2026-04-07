@@ -70,11 +70,11 @@ git checkout -b fix/issue-description
 
 ### 1. Implement the Algorithm
 
-Create your algorithm in `rcabench-platform/src/rcabench_platform/v2/algorithms/`:
+Create your algorithm in `rcabench-platform/src/rcabench_platform/v3/sdk/algorithms/`:
 
 ```python
 # my_algorithm.py
-from rcabench_platform.v2.algorithms import Algorithm, AlgorithmArgs, AlgorithmAnswer
+from rcabench_platform.v3.sdk.algorithms.spec import Algorithm, AlgorithmArgs, AlgorithmAnswer
 import polars as pl
 
 class MyRCAAlgorithm(Algorithm):
@@ -100,10 +100,10 @@ class MyRCAAlgorithm(Algorithm):
 
 ### 2. Register the Algorithm
 
-Add to `rcabench-platform/src/rcabench_platform/v2/cli/main.py`:
+Add to `rcabench-platform/src/rcabench_platform/v3/cli/main.py`:
 
 ```python
-from rcabench_platform.v2.algorithms.my_algorithm import MyRCAAlgorithm
+from rcabench_platform.v3.sdk.algorithms.my_algorithm import MyRCAAlgorithm
 
 def register_builtin_algorithms():
     registry = AlgorithmRegistry.get_instance()

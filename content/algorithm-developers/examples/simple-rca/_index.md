@@ -17,13 +17,13 @@ The `simplerca` algorithm uses simple heuristics to identify root causes:
 ### Algorithm Class
 
 ```python
-from rcabench_platform.v2.algorithms import Algorithm, AlgorithmArgs, AlgorithmAnswer
+from rcabench_platform.v3.sdk.algorithms.spec import Algorithm, AlgorithmArgs, AlgorithmAnswer
 import polars as pl
 
 class SimpleRCA(Algorithm):
-    def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+    def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
         # Load trace data
-        traces = pl.read_parquet(args.trace_path)
+        traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
 
         # Filter error spans
         error_spans = traces.filter(
@@ -44,13 +44,11 @@ class SimpleRCA(Algorithm):
         # Sort by score descending
         ranked = service_stats.sort("score", descending=True)
 
-        # Convert to list of (service, score) tuples
-        ranked_services = [
-            (row["service_name"], float(row["score"]))
-            for row in ranked.iter_rows(named=True)
+        # Convert to list of AlgorithmAnswer objects
+        return [
+            AlgorithmAnswer(level="service", name=row["service_name"], rank=rank)
+            for rank, row in enumerate(ranked.iter_rows(named=True), start=1)
         ]
-
-        return AlgorithmAnswer(ranked_services=ranked_services)
 ```
 
 ### Key Concepts
@@ -58,7 +56,7 @@ class SimpleRCA(Algorithm):
 **1. Loading Data**
 
 ```python
-traces = pl.read_parquet(args.trace_path)
+traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
 ```
 
 Use Polars to read parquet files efficiently. The trace data contains:
@@ -103,10 +101,13 @@ Calculate a score for each service and rank them.
 **5. Returning Results**
 
 ```python
-return AlgorithmAnswer(ranked_services=ranked_services)
+return [
+    AlgorithmAnswer(level="service", name=service_name, rank=rank)
+    for rank, service_name in enumerate(ranked_services, start=1)
+]
 ```
 
-Return a list of (service_name, score) tuples in descending order.
+Return a list of `AlgorithmAnswer` objects, each with `level`, `name`, and `rank` fields, sorted by likelihood.
 
 ## Running the Example
 
@@ -149,8 +150,8 @@ Ground truth: ts-order-service
 ### Add Latency Analysis
 
 ```python
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
-    traces = pl.read_parquet(args.trace_path)
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
+    traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
 
     # Calculate latency
     traces = traces.with_columns(
@@ -177,19 +178,17 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
 
     ranked = service_stats.sort("score", descending=True)
 
-    ranked_services = [
-        (row["service_name"], float(row["score"]))
-        for row in ranked.iter_rows(named=True)
+    return [
+        AlgorithmAnswer(level="service", name=row["service_name"], rank=rank)
+        for rank, row in enumerate(ranked.iter_rows(named=True), start=1)
     ]
-
-    return AlgorithmAnswer(ranked_services=ranked_services)
 ```
 
 ### Add Dependency Analysis
 
 ```python
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
-    traces = pl.read_parquet(args.trace_path)
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
+    traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
 
     # Build service dependency graph
     dependencies = traces.group_by(["parent_service", "service_name"]).agg(
@@ -199,7 +198,8 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
     # Find services with many downstream errors
     error_spans = traces.filter(pl.col("status_code") == "ERROR")
 
-    # Calculate propagation score
+    # Calculate propagation score for each service
+    service_scores = {}
     for service in error_spans["service_name"].unique():
         # Count how many downstream services have errors
         downstream_errors = dependencies.filter(
@@ -210,10 +210,16 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
         ).height
 
         # Services with more downstream errors are more likely root causes
-        # (implement scoring logic here)
+        service_scores[service] = downstream_errors
+
+    # Sort services by score
+    ranked_services = sorted(service_scores.items(), key=lambda x: x[1], reverse=True)
 
     # Return ranked services
-    return AlgorithmAnswer(ranked_services=ranked_services)
+    return [
+        AlgorithmAnswer(level="service", name=service_name, rank=rank)
+        for rank, (service_name, score) in enumerate(ranked_services, start=1)
+    ]
 ```
 
 ## Common Patterns
@@ -222,7 +228,7 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
 
 ```python
 # Use scan_parquet instead of read_parquet
-traces = pl.scan_parquet(args.trace_path)
+traces = pl.scan_parquet(args.input_folder / "abnormal_traces.parquet")
 
 # Build query
 result = traces.filter(
@@ -249,10 +255,10 @@ traces = traces.filter(
 ### Debugging Output
 
 ```python
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
-    print(f"Processing {args.dataset_name}/{args.datapack_id}")
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
+    print(f"Processing {args.dataset}/{args.datapack}")
 
-    traces = pl.read_parquet(args.trace_path)
+    traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
     print(f"Loaded {len(traces)} spans")
 
     error_spans = traces.filter(pl.col("status_code") == "ERROR")
@@ -260,8 +266,12 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
 
     # ... rest of algorithm
 
-    print(f"Ranked {len(ranked_services)} services")
-    return AlgorithmAnswer(ranked_services=ranked_services)
+    results = [
+        AlgorithmAnswer(level="service", name=service_name, rank=rank)
+        for rank, service_name in enumerate(ranked_services, start=1)
+    ]
+    print(f"Ranked {len(results)} services")
+    return results
 ```
 
 ## Performance Tips

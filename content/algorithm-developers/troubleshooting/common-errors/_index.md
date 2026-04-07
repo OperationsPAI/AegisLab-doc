@@ -105,7 +105,7 @@ Error: Algorithm 'my-rca' not found in registry
 
 **Cause**: Algorithm not registered in the platform.
 
-**Solution**: Register in `v2/cli/main.py`:
+**Solution**: Register in `v3/cli/main.py`:
 ```python
 def register_builtin_algorithms():
     registry = AlgorithmRegistry.get_instance()
@@ -122,8 +122,8 @@ Warning: Algorithm returned empty ranked_services
 
 **Solution**: Add debug logging:
 ```python
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
-    traces = pl.read_parquet(args.trace_path)
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
+    traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
     print(f"Loaded {len(traces)} traces")
 
     filtered = traces.filter(pl.col("status_code") == "ERROR")
@@ -132,6 +132,7 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
     if len(filtered) == 0:
         print("WARNING: No error spans found!")
         # Return default ranking or handle gracefully
+        return []
 ```
 
 ### Invalid return type
@@ -142,13 +143,16 @@ TypeError: Algorithm must return AlgorithmAnswer, got list
 
 **Cause**: Returning wrong type from algorithm.
 
-**Solution**: Return AlgorithmAnswer:
+**Solution**: Return list of AlgorithmAnswer:
 ```python
 # Wrong
 return ranked_services
 
 # Correct
-return AlgorithmAnswer(ranked_services=ranked_services)
+return [
+    AlgorithmAnswer(level="service", name=service_name, rank=rank)
+    for rank, service_name in enumerate(ranked_services, start=1)
+]
 ```
 
 ## Data Processing Errors
@@ -164,7 +168,7 @@ MemoryError: Unable to allocate array with shape (1000000, 100)
 **Solution**: Use lazy evaluation:
 ```python
 # Instead of read_parquet
-traces = pl.scan_parquet(args.trace_path)
+traces = pl.scan_parquet(args.input_folder / "abnormal_traces.parquet")
 
 # Build query lazily
 result = traces.filter(
@@ -184,13 +188,13 @@ SchemaError: column 'status_code' not found
 
 **Solution**: Check schema and handle missing columns:
 ```python
-traces = pl.read_parquet(args.trace_path)
+traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
 
 # Check if column exists
 if "status_code" not in traces.columns:
     print("WARNING: status_code column missing")
     # Handle gracefully
-    return AlgorithmAnswer(ranked_services=[])
+    return []
 
 # Or use with_columns to add default
 traces = traces.with_columns(
@@ -360,7 +364,7 @@ python -m src.my_rca \
 
 1. **Use lazy evaluation**:
 ```python
-traces = pl.scan_parquet(args.trace_path)  # Lazy
+traces = pl.scan_parquet(args.input_folder / "abnormal_traces.parquet")  # Lazy
 result = traces.filter(...).collect()  # Execute
 ```
 
@@ -391,7 +395,7 @@ profiler.print_stats()
 1. **Stream data**:
 ```python
 # Process in chunks
-for batch in pl.read_parquet_batched(args.trace_path, batch_size=10000):
+for batch in pl.read_parquet_batched(args.input_folder / "abnormal_traces.parquet", batch_size=10000):
     process_batch(batch)
 ```
 
@@ -446,6 +450,6 @@ MemoryError: Unable to allocate array
 
 **Code:**
 ```python
-traces = pl.read_parquet(args.trace_path)  # Loads all data
+traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")  # Loads all data
 ```
 ```

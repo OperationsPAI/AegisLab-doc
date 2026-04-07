@@ -27,10 +27,10 @@ Test with minimal data before scaling up:
 Insert print statements at key points:
 
 ```python
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
-    print(f"[DEBUG] Processing {args.dataset_name}/{args.datapack_id}")
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
+    print(f"[DEBUG] Processing {args.dataset}/{args.datapack}")
 
-    traces = pl.read_parquet(args.trace_path)
+    traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
     print(f"[DEBUG] Loaded {len(traces)} traces")
 
     error_spans = traces.filter(pl.col("status_code") == "ERROR")
@@ -40,9 +40,13 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
         print("[WARNING] No error spans found!")
 
     # Continue processing...
-    print(f"[DEBUG] Ranked {len(ranked_services)} services")
+    results = [
+        AlgorithmAnswer(level="service", name=service_name, rank=rank)
+        for rank, service_name in enumerate(ranked_services, start=1)
+    ]
+    print(f"[DEBUG] Ranked {len(results)} services")
 
-    return AlgorithmAnswer(ranked_services=ranked_services)
+    return results
 ```
 
 ### 3. Inspect Data
@@ -51,7 +55,7 @@ Examine input data structure:
 
 ```python
 # Check schema
-traces = pl.read_parquet(args.trace_path)
+traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
 print(traces.schema)
 
 # View sample data
@@ -71,8 +75,8 @@ print(traces.select(["service_name", "status_code"]).unique())
 ```python
 import pdb
 
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
-    traces = pl.read_parquet(args.trace_path)
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
+    traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
 
     # Set breakpoint
     pdb.set_trace()
@@ -84,28 +88,31 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
     # - Evaluate expressions: p len(traces)
 
     error_spans = traces.filter(pl.col("status_code") == "ERROR")
-    return AlgorithmAnswer(ranked_services=ranked_services)
+
+    results = [
+        AlgorithmAnswer(level="service", name=service_name, rank=rank)
+        for rank, service_name in enumerate(ranked_services, start=1)
+    ]
+    return results
 ```
 
 ### Using IPython for Exploration
 
 ```python
 # Create test script: test_algorithm.py
-from rcabench_platform.v2.algorithms import AlgorithmArgs
+from rcabench_platform.v3.sdk.algorithms.spec import AlgorithmArgs
 from my_algorithm import MyRCA
 import polars as pl
 
 args = AlgorithmArgs(
-    trace_path="data/trainticket-pandora-v1/0/trace.parquet",
-    ground_truth_path="data/trainticket-pandora-v1/0/ground_truth.parquet",
-    output_path="output/",
-    dataset_name="trainticket-pandora-v1",
-    datapack_id="0",
-    benchmark="trainticket"
+    dataset="trainticket-pandora-v1",
+    datapack="ts0-ts-auth-service-stress-jv8m9r",
+    input_folder=Path("data/rcabench-platform-v2/data/trainticket-pandora-v1/ts0-ts-auth-service-stress-jv8m9r"),
+    output_folder=Path("output")
 )
 
 # Load data
-traces = pl.read_parquet(args.trace_path)
+traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
 
 # Now explore interactively
 # IPython: ipython -i test_algorithm.py
@@ -123,16 +130,19 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
-    logging.info(f"Processing {args.dataset_name}/{args.datapack_id}")
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
+    logging.info(f"Processing {args.dataset}/{args.datapack}")
 
-    traces = pl.read_parquet(args.trace_path)
+    traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
     logging.debug(f"Loaded {len(traces)} traces")
 
     # Algorithm logic
 
     logging.info(f"Completed with {len(ranked_services)} ranked services")
-    return AlgorithmAnswer(ranked_services=ranked_services)
+    return [
+        AlgorithmAnswer(level="service", name=service_name, rank=rank)
+        for rank, service_name in enumerate(ranked_services, start=1)
+    ]
 ```
 
 ## Common Debugging Scenarios
@@ -144,8 +154,8 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
 **Debug steps**:
 
 ```python
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
-    traces = pl.read_parquet(args.trace_path)
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
+    traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
     print(f"Total traces: {len(traces)}")
 
     # Check for errors
@@ -163,6 +173,7 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
     print(services)
 
     # Continue debugging...
+    return []
 ```
 
 ### Incorrect Rankings
@@ -172,14 +183,15 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
 **Debug steps**:
 
 ```python
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
     # Load ground truth
-    gt = pl.read_parquet(args.ground_truth_path)
-    print(f"Ground truth: {gt['root_cause_service'][0]}")
+    with open(args.input_folder / "injection.json") as f:
+        injection = json.load(f)
+    print(f"Ground truth: {injection['target_service']}")
 
     # Check if ground truth service appears in traces
-    traces = pl.read_parquet(args.trace_path)
-    gt_service = gt['root_cause_service'][0]
+    traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
+    gt_service = injection['target_service']
 
     gt_spans = traces.filter(pl.col("service_name") == gt_service)
     print(f"Ground truth service spans: {len(gt_spans)}")
@@ -187,6 +199,7 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
 
     # Compare with your ranking logic
     # ...
+    return []
 ```
 
 ### Performance Issues
@@ -198,12 +211,12 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
 ```python
 import time
 
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
     start = time.time()
 
     # Time each operation
     t1 = time.time()
-    traces = pl.read_parquet(args.trace_path)
+    traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
     print(f"Load time: {time.time() - t1:.2f}s")
 
     t2 = time.time()
@@ -216,7 +229,10 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
 
     print(f"Total time: {time.time() - start:.2f}s")
 
-    return AlgorithmAnswer(ranked_services=ranked_services)
+    return [
+        AlgorithmAnswer(level="service", name=service_name, rank=rank)
+        for rank, service_name in enumerate(ranked_services, start=1)
+    ]
 ```
 
 ### Memory Issues
@@ -228,11 +244,11 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
 ```python
 import tracemalloc
 
-def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
     tracemalloc.start()
 
     # Check memory at each step
-    traces = pl.read_parquet(args.trace_path)
+    traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
     current, peak = tracemalloc.get_traced_memory()
     print(f"After load: {current / 1024**2:.1f} MB (peak: {peak / 1024**2:.1f} MB)")
 
@@ -241,10 +257,13 @@ def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
     print(f"After filter: {current / 1024**2:.1f} MB (peak: {peak / 1024**2:.1f} MB)")
 
     # If memory is high, try lazy evaluation
-    # traces = pl.scan_parquet(args.trace_path)
+    # traces = pl.scan_parquet(args.input_folder / "abnormal_traces.parquet")
 
     tracemalloc.stop()
-    return AlgorithmAnswer(ranked_services=ranked_services)
+    return [
+        AlgorithmAnswer(level="service", name=service_name, rank=rank)
+        for rank, service_name in enumerate(ranked_services, start=1)
+    ]
 ```
 
 ## Data Validation
@@ -319,7 +338,7 @@ def visualize_traces(traces):
 import pytest
 import polars as pl
 from my_rca import MyRCA
-from rcabench_platform.v2.algorithms import AlgorithmArgs
+from rcabench_platform.v3.sdk.algorithms.spec import AlgorithmArgs
 
 def test_basic_functionality():
     """Test algorithm with minimal data."""
@@ -469,7 +488,7 @@ cat output/output.json
 
 ```python
 # Enable query plan visualization
-traces = pl.scan_parquet(args.trace_path)
+traces = pl.scan_parquet(args.input_folder / "abnormal_traces.parquet")
 print(traces.explain())  # Show query plan
 
 # Check lazy frame

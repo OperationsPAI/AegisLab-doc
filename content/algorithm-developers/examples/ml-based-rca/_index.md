@@ -24,7 +24,7 @@ Traces → Graph Construction → Feature Extraction → GNN Model → Ranked Se
 ### Algorithm Structure
 
 ```python
-from rcabench_platform.v2.algorithms import Algorithm, AlgorithmArgs, AlgorithmAnswer
+from rcabench_platform.v3.sdk.algorithms.spec import Algorithm, AlgorithmArgs, AlgorithmAnswer
 import polars as pl
 import torch
 import torch.nn as nn
@@ -42,9 +42,9 @@ class MLBasedRCA(Algorithm):
         # Load weights if available
         return model
 
-    def __call__(self, args: AlgorithmArgs) -> AlgorithmAnswer:
+    def __call__(self, args: AlgorithmArgs) -> list[AlgorithmAnswer]:
         # Load data
-        traces = pl.read_parquet(args.trace_path)
+        traces = pl.read_parquet(args.input_folder / "abnormal_traces.parquet")
 
         # Build graph
         graph_data = self.build_graph(traces)
@@ -58,7 +58,10 @@ class MLBasedRCA(Algorithm):
         # Rank services
         ranked_services = self.rank_services(predictions, graph_data.service_names)
 
-        return AlgorithmAnswer(ranked_services=ranked_services)
+        return [
+            AlgorithmAnswer(level="service", name=service_name, rank=rank)
+            for rank, (service_name, score) in enumerate(ranked_services, start=1)
+        ]
 
     def build_graph(self, traces):
         # Implementation details below
@@ -210,9 +213,13 @@ def prepare_training_data(dataset_path):
 
     training_samples = []
 
-    for datapack_id in range(100):  # Assuming 100 datapacks
-        traces = pl.read_parquet(f"{dataset_path}/{datapack_id}/trace.parquet")
-        ground_truth = pl.read_parquet(f"{dataset_path}/{datapack_id}/ground_truth.parquet")
+    for datapack in datapack_list:  # Iterate through available datapacks
+        traces = pl.read_parquet(f"{dataset_path}/{datapack}/abnormal_traces.parquet")
+
+        # Read ground truth from injection.json
+        with open(f"{dataset_path}/{datapack}/injection.json") as f:
+            injection = json.load(f)
+            ground_truth_services = injection["ground_truth"]["service"]
 
         # Build graph and extract features
         graph_data = build_graph(traces)
@@ -220,7 +227,7 @@ def prepare_training_data(dataset_path):
 
         # Create labels (1 for root cause, 0 for others)
         labels = torch.zeros(graph_data.num_nodes)
-        for service in ground_truth["root_cause_service"]:
+        for service in ground_truth_services:
             if service in graph_data.service_names:
                 idx = graph_data.service_names.index(service)
                 labels[idx] = 1.0
